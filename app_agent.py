@@ -2,16 +2,14 @@
 Groq Agent
 """
 import time
-import json
 from datetime import datetime
 
-import gspread
+import csv
 import streamlit as st
-from google.oauth2 import service_account
 from langchain import hub
 from langchain_groq import ChatGroq
 from langchain.agents import AgentExecutor, create_react_agent
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_community.tools import TavilySearchResults
 from langchain_community.callbacks import StreamlitCallbackHandler
 from openai import OpenAI
 
@@ -69,17 +67,14 @@ def is_fake_question(text):
 
 def append_to_sheet(prompt, generated, answer):
     """
-    Add to GSheet
+    Add to local CSV file
     """
-    credentials = service_account.Credentials.from_service_account_info(
-        json.loads(st.secrets["GCP_SERVICE_ACCOUNT"]),
-        scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    )
-    gc = gspread.authorize(credentials)
-    sh = gc.open_by_url(st.secrets["PRIVATE_GSHEETS_URL"])
-    worksheet = sh.get_worksheet(0) # Assuming you want to write to the first sheet
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    worksheet.append_row([current_time, prompt, generated, answer])
+    row = [current_time, prompt, generated, answer]
+    
+    with open('local_data.csv', mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(row)
 
 st.title("agents go brrrr with groq")
 st.subheader("ReAct Search Agent")
